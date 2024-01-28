@@ -1,33 +1,49 @@
 extensions [gis]
-globals [ natural-dataset
-          landuse-dataset ]
+globals [ dataset ]
 patches-own [ patch-defence-factor
               copper-at-patch
-              horses-at-patch ]
+              horses-at-patch
+              is-accessible ]
 turtles-own [ population
               copper-at-agent
               horses-at-agent ]
 
 to init-gis
-  ; set natural-dataset_1 gis:load-dataset "gis_osm_natural_a_free_1.shp"
-  ; set landuse-dataset_1 gis:load-dataset "gis_osm_landuse_a_free_1.shp"
-  ; set natural-dataset_2 gis:load-dataset "gis_osm_natural_free_1.shp"
+  set dataset gis:load-dataset "bronze-map.shp"
+  ask patches [
+    set is-accessible false
+   ]
+  foreach gis:feature-list-of dataset [
+    polygon ->
+    let set-settlement false
+    ask patches gis:intersecting polygon [
+      set horses-at-patch (gis:property-value polygon "cattle")
+      set copper-at-patch (gis:property-value polygon "copper")
+      set pcolor green
+      set is-accessible true
+    print (gis:property-value polygon "settlement")
+      if (gis:property-value polygon "settlement") = 1 and (set-settlement = false) [
+        print "test"
+        set set-settlement true
+        sprout 1
+      ]
+    ]
+]
 end
 
 to init-patches
   ask patches [
-    set patch-defence-factor (0.75 + (random-float 0.75))  ; TODO: - сделать GIS с нанесенным рельефом
-    set copper-at-patch random 5 ; TODO: - сделать GIS с нанесенными ресурсами
-    set horses-at-patch random 5 ; TODO: - сделать GIS с нанесенными местами для пастбищ
+    set patch-defence-factor (0.75 + (random-float 0.75))
+    ; set copper-at-patch random 5
+    ; set horses-at-patch random 5
     recolor-place
   ]
 end
 
 to init-turtles
   set-default-shape turtles "person"
-  create-turtles 5
-  ask turtles [ setxy random-pxcor random-pycor
-                set population (50 + (random 200)) ]
+  ; create-turtles 5
+  ask turtles [ set population (50 + (random 200)) ]
 end
 
 to init-globals
@@ -39,7 +55,6 @@ to init
   clear-all
   reset-ticks
   random-seed new-seed
-
 
   init-globals
   init-patches
@@ -95,7 +110,7 @@ to move-to-better-copper-place
 
     if (y + 1) <= max-pycor [
       ask patch-at 1 1 [
-        if copper-at-patch > best-copper-at-patch [
+        if (copper-at-patch > best-copper-at-patch) and is-accessible [
           set bestx 1
           set besty 1
           set best-copper-at-patch copper-at-patch
@@ -105,7 +120,7 @@ to move-to-better-copper-place
 
     if (y - 1) >= min-pycor [
       ask patch-at 1 -1 [
-        if copper-at-patch > best-copper-at-patch [
+        if (copper-at-patch > best-copper-at-patch) and is-accessible [
           set bestx 1
           set besty -1
           set best-copper-at-patch copper-at-patch
@@ -114,7 +129,7 @@ to move-to-better-copper-place
     ]
 
     ask patch-at 1 0 [
-      if copper-at-patch > best-copper-at-patch [
+      if (copper-at-patch > best-copper-at-patch) and is-accessible [
         set bestx 1
         set besty 0
         set best-copper-at-patch copper-at-patch
@@ -127,7 +142,7 @@ to move-to-better-copper-place
 
     if (y + 1) <= max-pycor [
       ask patch-at -1 1 [
-        if copper-at-patch > best-copper-at-patch [
+        if (copper-at-patch > best-copper-at-patch) and is-accessible [
           set bestx -1
           set besty 1
           set best-copper-at-patch copper-at-patch
@@ -137,7 +152,7 @@ to move-to-better-copper-place
 
     if (y - 1) >= min-pycor [
       ask patch-at -1 -1 [
-        if copper-at-patch > best-copper-at-patch [
+        if (copper-at-patch > best-copper-at-patch) and is-accessible [
           set bestx -1
           set besty -1
           set best-copper-at-patch copper-at-patch
@@ -146,7 +161,7 @@ to move-to-better-copper-place
     ]
 
     ask patch-at -1 0 [
-      if copper-at-patch > best-copper-at-patch [
+      if (copper-at-patch > best-copper-at-patch) and is-accessible [
         set bestx -1
         set besty 0
         set best-copper-at-patch copper-at-patch
@@ -157,7 +172,7 @@ to move-to-better-copper-place
 
   if (y + 1) <= max-pycor [
     ask patch-at 0 1 [
-      if copper-at-patch > best-copper-at-patch [
+      if (copper-at-patch > best-copper-at-patch) and is-accessible [
         set bestx 0
         set besty 1
         set best-copper-at-patch copper-at-patch
@@ -167,7 +182,7 @@ to move-to-better-copper-place
 
   if (y - 1) >= min-pycor [
     ask patch-at 0 -1 [
-      if copper-at-patch > best-copper-at-patch [
+      if (copper-at-patch > best-copper-at-patch) and is-accessible [
         set bestx 0
         set besty -1
         set best-copper-at-patch copper-at-patch
@@ -188,7 +203,7 @@ to move-to-better-horses-place
 
     if (y + 1) <= max-pycor [
       ask patch-at 1 1 [
-        if horses-at-patch > best-horses-at-patch [
+        if (horses-at-patch > best-horses-at-patch) and is-accessible [
           set bestx 1
           set besty 1
           set best-horses-at-patch horses-at-patch
@@ -198,7 +213,7 @@ to move-to-better-horses-place
 
     if (y - 1) >= min-pycor [
       ask patch-at 1 -1 [
-        if horses-at-patch > best-horses-at-patch [
+        if (horses-at-patch > best-horses-at-patch) and is-accessible [
           set bestx 1
           set besty -1
           set best-horses-at-patch horses-at-patch
@@ -207,7 +222,7 @@ to move-to-better-horses-place
     ]
 
     ask patch-at 1 0 [
-      if horses-at-patch > best-horses-at-patch [
+      if (horses-at-patch > best-horses-at-patch) and is-accessible [
         set bestx 1
         set besty 0
         set best-horses-at-patch horses-at-patch
@@ -220,7 +235,7 @@ to move-to-better-horses-place
 
     if (y + 1) <= max-pycor [
       ask patch-at -1 1 [
-        if horses-at-patch > best-horses-at-patch [
+        if (horses-at-patch > best-horses-at-patch) and is-accessible [
           set bestx -1
           set besty 1
           set best-horses-at-patch horses-at-patch
@@ -230,7 +245,7 @@ to move-to-better-horses-place
 
     if (y - 1) >= min-pycor [
       ask patch-at -1 -1 [
-        if horses-at-patch > best-horses-at-patch [
+        if (horses-at-patch > best-horses-at-patch) and is-accessible [
           set bestx -1
           set besty -1
           set best-horses-at-patch horses-at-patch
@@ -239,7 +254,7 @@ to move-to-better-horses-place
     ]
 
     ask patch-at -1 0 [
-      if horses-at-patch > best-horses-at-patch [
+      if (horses-at-patch > best-horses-at-patch) and is-accessible [
         set bestx -1
         set besty 0
         set best-horses-at-patch horses-at-patch
@@ -250,7 +265,7 @@ to move-to-better-horses-place
 
   if (y + 1) <= max-pycor [
     ask patch-at 0 1 [
-      if horses-at-patch > best-horses-at-patch [
+      if (horses-at-patch > best-horses-at-patch) and is-accessible [
         set bestx 0
         set besty 1
         set best-horses-at-patch horses-at-patch
@@ -260,7 +275,7 @@ to move-to-better-horses-place
 
   if (y - 1) >= min-pycor [
     ask patch-at 0 -1 [
-      if horses-at-patch > best-horses-at-patch [
+      if (horses-at-patch > best-horses-at-patch) and is-accessible [
         set bestx 0
         set besty -1
         set best-horses-at-patch horses-at-patch
@@ -297,7 +312,7 @@ to fight-neighbors
 end
 
 to recolor-place
-  set pcolor scale-color orange copper-at-patch 5 -2
+  ; set pcolor scale-color orange copper-at-patch 5 -2
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
