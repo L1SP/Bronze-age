@@ -2,11 +2,11 @@ extensions [gis]
 globals [ dataset ]
 patches-own [ patch-defence-factor
               copper-at-patch
-              horses-at-patch
+              cattle-at-patch
               is-accessible ]
 turtles-own [ population
               copper-at-agent
-              horses-at-agent ]
+              cattle-at-agent ]
 
 to init-gis
   set dataset gis:load-dataset "bronze-map.shp"
@@ -17,13 +17,11 @@ to init-gis
     polygon ->
     let set-settlement false
     ask patches gis:intersecting polygon [
-      set horses-at-patch (gis:property-value polygon "cattle")
+      set cattle-at-patch (gis:property-value polygon "cattle")
       set copper-at-patch (gis:property-value polygon "copper")
       set pcolor green
       set is-accessible true
-    print (gis:property-value polygon "settlement")
       if (gis:property-value polygon "settlement") = 1 and (set-settlement = false) [
-        print "test"
         set set-settlement true
         sprout 1
       ]
@@ -33,20 +31,17 @@ end
 
 to init-patches
   ask patches [
-    set patch-defence-factor (0.75 + (random-float 0.75))
-    ; set copper-at-patch random 5
-    ; set horses-at-patch random 5
-    recolor-place
+    set patch-defence-factor (0.5 + (random-float 1.5))
   ]
 end
 
 to init-turtles
-  set-default-shape turtles "person"
-  ; create-turtles 5
-  ask turtles [ set population (50 + (random 200)) ]
+  ask turtles [ set population (50 + (random 30)) ]
+  ask turtles [ set cattle-at-agent (2 + (random 5)) ]
 end
 
 to init-globals
+  set-default-shape turtles "person"
   resize-world -10 10 -10 10
   init-gis
 end
@@ -54,7 +49,7 @@ end
 to init
   clear-all
   reset-ticks
-  random-seed new-seed
+  random-seed 2024
 
   init-globals
   init-patches
@@ -71,32 +66,49 @@ to step
         ]
       ]
     ]
-    if horses-at-patch > 0 [
+    if cattle-at-patch > 0 [
       if any? turtles-on self [
-        set horses-at-patch horses-at-patch - 1
+        set cattle-at-patch cattle-at-patch - 1
         ask turtles-on self [
-          set horses-at-agent (horses-at-agent + 1)
+          set cattle-at-agent (cattle-at-agent + 1)
         ]
       ]
     ]
-    recolor-place ; TODO: - сделать цвет для пастбищ и слияние цветов(сейчас показывается только медь)
   ]
   ask turtles [
+    ;if who = 1 [
+      ;print "Step: "
+      ;print ticks
+      ;print "Population:"
+      ;print population
+      ;print "Copper:"
+      ;print copper-at-agent
+      ;print "Cattle:"
+      ;print cattle-at-agent
+    ;]
     ifelse any? turtles-on neighbors [
         fight-neighbors
     ]
     [
-      set population (population * 1.05) ; TODO: - выбрать наиболее подходящую формулу(гиперболическая, экспоненциальная или параболическая)
+      ifelse cattle-at-agent > 2 [
+        set population ceiling (population * 1.005)
+      ]
+      [
+        set population floor (population * 0.995)
+      ]
     ]
     ifelse copper-at-patch = 0 [
-      move-to-better-copper-place ; TODO: - добавить рандом в перемещение или сделать обход в глубину всей местности
+      move-to-better-copper-place
     ]
-    [ if horses-at-patch = 0 [
-        move-to-better-horses-place ; TODO: - добавить рандом в перемещение или сделать обход в глубину всей местности
+    [ if cattle-at-patch = 0 [
+        move-to-better-cattle-place
       ]
     ]
   ]
   tick
+  if count turtles = 1 [
+   stop
+  ]
 end
 
 to move-to-better-copper-place
@@ -192,40 +204,40 @@ to move-to-better-copper-place
   move-to patch-at bestx besty
 end
 
-to move-to-better-horses-place
+to move-to-better-cattle-place
   let bestx pxcor
   let besty pycor
   let x pxcor
   let y pycor
-  let best-horses-at-patch -1
+  let best-cattle-at-patch -1
 
   if (x + 1) <= max-pxcor [
 
     if (y + 1) <= max-pycor [
       ask patch-at 1 1 [
-        if (horses-at-patch > best-horses-at-patch) and is-accessible [
+        if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
           set bestx 1
           set besty 1
-          set best-horses-at-patch horses-at-patch
+          set best-cattle-at-patch cattle-at-patch
         ]
       ]
     ]
 
     if (y - 1) >= min-pycor [
       ask patch-at 1 -1 [
-        if (horses-at-patch > best-horses-at-patch) and is-accessible [
+        if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
           set bestx 1
           set besty -1
-          set best-horses-at-patch horses-at-patch
+          set best-cattle-at-patch cattle-at-patch
         ]
       ]
     ]
 
     ask patch-at 1 0 [
-      if (horses-at-patch > best-horses-at-patch) and is-accessible [
+      if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
         set bestx 1
         set besty 0
-        set best-horses-at-patch horses-at-patch
+        set best-cattle-at-patch cattle-at-patch
       ]
     ]
 
@@ -235,29 +247,29 @@ to move-to-better-horses-place
 
     if (y + 1) <= max-pycor [
       ask patch-at -1 1 [
-        if (horses-at-patch > best-horses-at-patch) and is-accessible [
+        if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
           set bestx -1
           set besty 1
-          set best-horses-at-patch horses-at-patch
+          set best-cattle-at-patch cattle-at-patch
         ]
       ]
     ]
 
     if (y - 1) >= min-pycor [
       ask patch-at -1 -1 [
-        if (horses-at-patch > best-horses-at-patch) and is-accessible [
+        if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
           set bestx -1
           set besty -1
-          set best-horses-at-patch horses-at-patch
+          set best-cattle-at-patch cattle-at-patch
         ]
       ]
     ]
 
     ask patch-at -1 0 [
-      if (horses-at-patch > best-horses-at-patch) and is-accessible [
+      if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
         set bestx -1
         set besty 0
-        set best-horses-at-patch horses-at-patch
+        set best-cattle-at-patch cattle-at-patch
       ]
     ]
 
@@ -265,20 +277,20 @@ to move-to-better-horses-place
 
   if (y + 1) <= max-pycor [
     ask patch-at 0 1 [
-      if (horses-at-patch > best-horses-at-patch) and is-accessible [
+      if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
         set bestx 0
         set besty 1
-        set best-horses-at-patch horses-at-patch
+        set best-cattle-at-patch cattle-at-patch
       ]
     ]
   ]
 
   if (y - 1) >= min-pycor [
     ask patch-at 0 -1 [
-      if (horses-at-patch > best-horses-at-patch) and is-accessible [
+      if (cattle-at-patch > best-cattle-at-patch) and is-accessible [
         set bestx 0
         set besty -1
-        set best-horses-at-patch horses-at-patch
+        set best-cattle-at-patch cattle-at-patch
       ]
     ]
   ]
@@ -286,33 +298,29 @@ to move-to-better-horses-place
 end
 
 to fight-neighbors
-  let defender-power (copper-at-agent * horses-at-agent * population * patch-defence-factor) ; TODO: - формула подходит только для демонстрации взаимодействия между агентами
+  let defender-power (copper-at-agent * cattle-at-agent * population * patch-defence-factor)
   let defender-copper copper-at-agent
-  let defender-horses horses-at-agent
+  let defender-cattle cattle-at-agent
   ask turtles-on neighbors [
     let attacker-copper copper-at-agent
-    let attacker-horses horses-at-agent
-    ifelse copper-at-agent * horses-at-agent * population < defender-power [
+    let attacker-cattle cattle-at-agent
+    ifelse copper-at-agent * cattle-at-agent * population < defender-power [
       ask myself [
         set copper-at-agent (copper-at-agent + attacker-copper)
-        set horses-at-agent (horses-at-agent + attacker-horses)
+        set cattle-at-agent (cattle-at-agent + attacker-cattle)
       ]
       print "defender has killed the attacker"
       die
     ]
     [
       set copper-at-agent (copper-at-agent + defender-copper)
-      set horses-at-agent (horses-at-agent + defender-horses)
+      set cattle-at-agent (cattle-at-agent + defender-cattle)
       ask myself [
         print "attacker has killed the defender"
         die
       ]
     ]
   ]
-end
-
-to recolor-place
-  ; set pcolor scale-color orange copper-at-patch 5 -2
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -329,8 +337,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -10
 10
