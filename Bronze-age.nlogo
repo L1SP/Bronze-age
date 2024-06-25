@@ -38,6 +38,19 @@ end
 to init-turtles
   ask turtles [ set population (50 + (random 30)) ]
   ask turtles [ set cattle-at-agent (2 + (random 5)) ]
+  ask turtles [
+    ifelse who = 0 [
+      set color red
+    ]
+    [
+      ifelse who = 1 [
+        set color blue
+      ]
+      [
+        set color yellow
+      ]
+    ]
+  ]
 end
 
 to init-globals
@@ -57,7 +70,20 @@ to init
 end
 
 to step
+  print (word "Step: " ticks)
   ask patches [
+    if is-accessible = true [
+      print "Patch"
+      if any? turtles-on self [
+        ask turtles-on self [
+          print(word "Agent: " who)
+        ]
+      ]
+      print (word "X coordinate: " pxcor)
+      print (word "Y coordinate: " pycor)
+      print (word "Copper: " copper-at-patch)
+      print (word "Cattle: " cattle-at-patch)
+    ]
     if copper-at-patch > 0 [
       if any? turtles-on self [
         set copper-at-patch copper-at-patch - 1
@@ -76,16 +102,13 @@ to step
     ]
   ]
   ask turtles [
-    ;if who = 1 [
-      ;print "Step: "
-      ;print ticks
-      ;print "Population:"
-      ;print population
-      ;print "Copper:"
-      ;print copper-at-agent
-      ;print "Cattle:"
-      ;print cattle-at-agent
-    ;]
+    print "Agent"
+    print (word "Identifier: " who)
+    print (word "X coordinate: " xcor)
+    print (word "Y coordinate: " ycor)
+    print (word "Population: " population)
+    print (word "Copper: " copper-at-agent)
+    print (word "Cattle: " cattle-at-agent)
     ifelse any? turtles-on neighbors [
         fight-neighbors
     ]
