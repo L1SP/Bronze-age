@@ -226,7 +226,7 @@ if __name__ == "__main__":
     adjacency_list_for_steps = parse_file("input.txt")
     for key, value in adjacency_list_for_steps[0].step_info.items():
         print("Base patch:", key, sep="\n")
-        print("Adjacent patches:")
+        print("\nAdjacent patches:")
         for val in value:
             print(val[0])
             print("Distance:", val[1], end="\n\n") 
